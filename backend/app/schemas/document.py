@@ -22,3 +22,9 @@ class DocumentListItem(BaseModel):
     id: int
     filename: str
     uploaded_at: datetime
+
+
+class DocumentListItemWithClauses(DocumentListItem):
+    """Document list item with distinct clause types from its sentences."""
+
+    clause_types: list[str] = []

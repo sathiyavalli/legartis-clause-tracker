@@ -1,0 +1,12 @@
+{
+  "name": "legartis-clause-tracker",
+  "version": "1.0.0",
+  "scripts": {
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open"
+  },
+  "devDependencies": {
+    "cypress": "^15.11.0",
+    "typescript": "^5.2.2"
+  }
+}

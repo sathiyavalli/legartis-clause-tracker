@@ -1,12 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.document import Document, DocumentCreate, DocumentListItem
+from app.schemas.document import (
+    Document,
+    DocumentCreate,
+    DocumentListItem,
+    DocumentListItemWithClauses,
+)
 from app.schemas.sentences import Sentence, SentenceLabel
 from app.services.document_service import (
     create_document,
     get_documents,
     get_document,
+    get_documents_with_clauses,
 )
 from app.services.sentence_service import (
     get_sentences_by_document,
@@ -49,9 +55,14 @@ def upload_document(
 # -----------------------------
 # 2. LIST DOCUMENTS
 # -----------------------------
-@router.get("", response_model=list[DocumentListItem])
-def list_documents(db: Session = Depends(get_db)):
-    return get_documents(db)
+@router.get("", response_model=list[DocumentListItemWithClauses])
+def list_documents(
+    search: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    db: Session = Depends(get_db),
+):
+    return get_documents_with_clauses(db, search=search, date_from=date_from, date_to=date_to)
 
 
 # -----------------------------

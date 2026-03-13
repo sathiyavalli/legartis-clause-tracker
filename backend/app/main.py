@@ -7,10 +7,16 @@ from app.models import clause, document, sentence
 # Initialize FastAPI app FIRST
 app = FastAPI()
 
-# CORS middleware
+# CORS middleware - allow localhost on any port for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://localhost:80"],
+    allow_origins=[
+        "http://localhost:4200",
+        "http://localhost",
+        "http://127.0.0.1:4200",
+        "http://127.0.0.1",
+    ],
+    allow_origin_regex=r"http://localhost:\d+",  # Allow any localhost port
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

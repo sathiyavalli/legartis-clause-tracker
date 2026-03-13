@@ -1,0 +1,5 @@
+This is a test contract.
+
+Clause 1: Confidentiality.
+Clause 2: Termination.
+Clause 3: Indemnification.
