@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../../../styles/variables' as v;
 
 .upload-page {
@@ -49,7 +50,7 @@
   }
 
   &.active .breadcrumb-circle {
-    background: v.$secondary-color;
+    background: v.$primary-color;
     color: white;
     box-shadow: 0 0 0 4px rgba(18, 54, 132, 0.1);
   }
@@ -85,15 +86,55 @@
     margin-bottom: v.$spacing-md;
   }
 
-  input[type='file'] {
-    display: block;
-    margin: v.$spacing-md auto;
+  .file-input-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: v.$spacing-sm;
+    margin: v.$spacing-md 0;
+    flex-wrap: wrap;
   }
 
-  .selected-file {
-    color: v.$secondary-color;
-    font-weight: 500;
-    margin: v.$spacing-md 0;
+  .file-input-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    background: v.$primary-color;
+    color: #fff;
+    border-radius: v.$border-radius-md;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: v.$font-size-md;
+    box-shadow: v.$shadow-soft;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .file-input-label:hover {
+    background: color.adjust(v.$primary-color, $lightness: -6%);
+    box-shadow: 0 6px 16px rgba(213, 54, 94, 0.35);
+  }
+
+  .file-input-label.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .file-input-text {
+    font-size: 0.9rem;
+    color: v.$text-muted;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  input[type='file'] {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
   }
 
   .buttons {
@@ -104,23 +145,54 @@
   }
 
   .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: v.$spacing-xs;
     background: v.$primary-color;
     color: #fff;
     border: none;
-    padding: v.$spacing-sm v.$spacing-md;
     border-radius: v.$border-radius-md;
+    padding: 10px 18px;
+    font-weight: 600;
+    font-size: v.$font-size-md;
     cursor: pointer;
-    font-weight: 500;
-    transition: opacity 0.2s;
+    box-shadow: v.$shadow-soft;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
 
     &:hover:not(:disabled) {
-      opacity: 0.9;
+      background: color.adjust(v.$primary-color, $lightness: -6%);
+      box-shadow: 0 6px 16px rgba(213, 54, 94, 0.35);
     }
 
     &:disabled {
       opacity: 0.6;
       cursor: not-allowed;
     }
+  }
+
+  .success {
+    display: inline-flex;
+    align-items: center;
+    gap: v.$spacing-xs;
+    color: #155724;
+    margin-top: v.$spacing-md;
+    padding: v.$spacing-sm;
+    background: rgba(40, 167, 69, 0.12);
+    border-radius: v.$border-radius-sm;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(40, 167, 69, 0.4);
+    border-top-color: rgba(40, 167, 69, 1);
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .error {

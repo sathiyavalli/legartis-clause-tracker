@@ -3,36 +3,48 @@
   <div class="breadcrumb">
     <div class="breadcrumb-step" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1">
       <div class="breadcrumb-circle">1</div>
-      <span class="breadcrumb-label">Choose</span>
+      <span class="breadcrumb-label">Choose File</span>
     </div>
     <div class="breadcrumb-line"></div>
     <div class="breadcrumb-step" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2">
       <div class="breadcrumb-circle">2</div>
-      <span class="breadcrumb-label">Upload</span>
+      <span class="breadcrumb-label">Upload File</span>
     </div>
     <div class="breadcrumb-line"></div>
     <div class="breadcrumb-step" [class.active]="currentStep() === 3" [class.completed]="currentStep() > 3">
       <div class="breadcrumb-circle">3</div>
-      <span class="breadcrumb-label">Assign</span>
+      <span class="breadcrumb-label">Assign Clause</span>
     </div>
   </div>
 
   <div class="upload-form">
     <h2>Upload contract</h2>
     <p class="info-text">Upload a .txt or .md file to extract sentences and assign clause types</p>
-    <input
-      type="file"
-      accept=".txt,.md,.markdown"
-      (change)="onFileSelected($event)"
-      [disabled]="uploading"
-      #fileInput
-    />
-    <p *ngIf="selectedFile" class="selected-file">📄 {{ selectedFile.name }}</p>
-    <div class="buttons">
-      <button (click)="upload()" [disabled]="!selectedFile || uploading" class="btn-primary">
-        {{ uploading ? 'Uploading...' : 'Upload' }}
-      </button>
+    <div class="file-input-wrapper">
+      <label
+        class="file-input-label"
+        [class.disabled]="uploading"
+        for="fileInput"
+      >
+        Choose file
+      </label>
+      <span class="file-input-text">
+        {{ selectedFile ? selectedFile.name : 'No file chosen' }}
+      </span>
+      <input
+          id="fileInput"
+          type="file"
+          accept=".txt,.md,.markdown"
+          (change)="onFileSelected($event); upload()"
+          [disabled]="uploading"
+        />
     </div>
+
+
+    <p class="success" *ngIf="successMessage">
+      <span class="spinner" *ngIf="uploading" aria-hidden="true"></span>
+      ✅ {{ successMessage }}
+    </p>
     <p class="error" *ngIf="errorMessage">❌ {{ errorMessage }}</p>
   </div>
 </div>

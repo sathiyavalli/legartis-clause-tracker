@@ -31,6 +31,7 @@ export class UploadComponent {
   uploading = false;
   selectedFile: File | null = null;
   errorMessage = '';
+  successMessage = '';
 
   // Breadcrumb state: track which step is active
   currentStep = signal<1 | 2 | 3>(1); // 1 = Choose, 2 = Upload, 3 = Assign
@@ -61,9 +62,14 @@ export class UploadComponent {
     this.api.uploadDocument(this.selectedFile).subscribe({
       next: (doc) => {
         console.log('Upload successful, received document:', doc);
-        this.uploading = false;
-        // Navigate to document viewer to assign labels
-        this.router.navigate(['/contracts', doc.id]);
+        this.successMessage = 'Upload complete! Redirecting to label sentences...';
+        this.currentStep.set(3); // Show 'Assign Clause' as active
+
+        // Give user a moment to see the success message before navigating
+        setTimeout(() => {
+          this.uploading = false;
+          this.router.navigate(['/contracts', doc.id]);
+        }, 1500);
       },
       error: (err) => {
         console.error('Upload error:', err);

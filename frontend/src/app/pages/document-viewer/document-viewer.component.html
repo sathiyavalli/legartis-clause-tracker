@@ -8,17 +8,17 @@
   <div class="breadcrumb">
     <div class="breadcrumb-step completed">
       <div class="breadcrumb-circle">1</div>
-      <span class="breadcrumb-label">Choose</span>
+      <span class="breadcrumb-label">Choose File</span>
     </div>
     <div class="breadcrumb-line"></div>
     <div class="breadcrumb-step completed">
       <div class="breadcrumb-circle">2</div>
-      <span class="breadcrumb-label">Upload</span>
+      <span class="breadcrumb-label">Upload File</span>
     </div>
     <div class="breadcrumb-line"></div>
     <div class="breadcrumb-step active">
       <div class="breadcrumb-circle">3</div>
-      <span class="breadcrumb-label">Assign</span>
+      <span class="breadcrumb-label">Assign Clauses</span>
     </div>
   </div>
 
@@ -33,7 +33,7 @@
           <h1>{{ document()?.filename }}</h1>
         </div>
         <div class="header-right">
-          <a class="btn-nav btn-nav-primary" (click)="onNewContractClick()" title="Upload new contract">+ New Contract</a>
+          <a class="btn-nav btn-nav-primary" (click)="onNewContractClick()" title="Upload new contract">+ Add Contract</a>
           <a class="btn-secondary" routerLink="/dashboard">Back to dashboard</a>
         </div>
       </div>
@@ -58,13 +58,114 @@
           </div>
           
           <div class="sidebar-content" *ngIf="sidebarOpen()">
-            <div class="clause-summary" *ngIf="sentences().length > 0">
-              <div class="summary-item" *ngFor="let clauseType of clauseTypes; trackBy: trackByClause">
-                <span class="summary-label">{{ clauseType }}</span>
-                <span class="summary-count" [style.background-color]="getClauseColor(clauseType).border">
-                  {{ (clauseCounts()[clauseType] || 0) }}
-                </span>
+            <!-- Clause Types Management -->
+            <div class="clause-section">
+              <div class="clause-header">
+                <h4>Add or Edit Clause</h4>
+                <button 
+                  class="btn-add-clause"
+                  (click)="openAddClauseInput()"
+                  *ngIf="!showAddClauseInput()"
+                  title="Add new clause type"
+                >
+                  +
+                </button>
               </div>
+
+              <!-- Add new clause input -->
+              <div class="clause-add-section" *ngIf="showAddClauseInput()">
+                <form [formGroup]="addClauseForm" (ngSubmit)="addClauseType()" class="add-clause-form">
+                  <div class="add-clause-input-group">
+                    <input
+                      type="text"
+                      formControlName="name"
+                      placeholder="Enter clause type name"
+                      class="clause-input"
+                      (keydown)="onAddClauseKeydown($event)"
+                      autofocus
+                    />
+                    <button type="submit" class="btn-submit" [disabled]="addClauseForm.invalid">
+                      +
+                    </button>
+                  </div>
+                </form>
+                <button class="btn-cancel-add" (click)="cancelAddClause()">Cancel</button>
+              </div>
+
+              <!-- Clause Types List -->
+              <div class="clause-items">
+                <div 
+                  class="clause-item"
+                  *ngFor="let clause of clauseTypesList(); trackBy: trackByClauseId"
+                  [class.editing]="editingClauseId() === clause.id"
+                >
+                  <div class="clause-text-container">
+                    <!-- Display mode -->
+                    <div *ngIf="editingClauseId() !== clause.id" class="clause-display">
+                      <span class="clause-name">{{ clause.name }}</span>
+                      <span class="clause-count" [style.background-color]="getClauseColor(clause.name).border">
+                        {{ (clauseCounts()[clause.name] || 0) }}
+                      </span>
+                    </div>
+
+                    <!-- Edit mode -->
+                    <div *ngIf="editingClauseId() === clause.id" class="clause-edit">
+                      <input
+                        type="text"
+                        [value]="editingClauseName()"
+                        class="clause-input-edit"
+                        (input)="editingClauseName.set($event.target.value)"
+                        (keydown)="onEditClauseKeydown($event, clause)"
+                        autofocus
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Action buttons -->
+                  <div class="clause-actions">
+                    <button
+                      *ngIf="editingClauseId() !== clause.id"
+                      class="btn-edit"
+                      (click)="startEditClause(clause)"
+                      title="Edit clause type"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      *ngIf="editingClauseId() === clause.id"
+                      class="btn-save"
+                      (click)="saveEditClause(clause)"
+                      title="Save changes"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      *ngIf="editingClauseId() === clause.id"
+                      class="btn-cancel-edit"
+                      (click)="cancelEditClause()"
+                      title="Cancel editing"
+                    >
+                      ✕
+                    </button>
+                    <button
+                      *ngIf="editingClauseId() !== clause.id"
+                      class="btn-delete"
+                      (click)="showDeleteConfirmationDialog(clause)"
+                      title="Delete clause type"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
+
+                <p class="no-clauses" *ngIf="clauseTypesList().length === 0">
+                  No clause types yet
+                </p>
+              </div>
+            </div>
+
+            <!-- Clause Summary Stats -->
+            <div class="clause-summary" *ngIf="sentences().length > 0">
             </div>
           </div>
         </aside>
@@ -85,13 +186,13 @@
 
           <div class="clause-options">
             <button 
-              *ngFor="let clauseType of clauseTypes; trackBy: trackByClause"
+              *ngFor="let clauseType of clauseTypesList(); trackBy: trackByClauseId"
               class="clause-option"
-              (click)="assignClauseToSelection(clauseType)"
-              [style]="'--clause-bg: ' + getClauseColor(clauseType).bg + '; --clause-border: ' + getClauseColor(clauseType).border + '; --clause-text: ' + getClauseColor(clauseType).text"
+              (click)="assignClauseToSelection(clauseType.name)"
+              [style]="'--clause-bg: ' + getClauseColor(clauseType.name).bg + '; --clause-border: ' + getClauseColor(clauseType.name).border + '; --clause-text: ' + getClauseColor(clauseType.name).text"
             >
-              <span class="clause-dot" [style.background-color]="getClauseColor(clauseType).border"></span>
-              {{ clauseType }}
+              <span class="clause-dot" [style.background-color]="getClauseColor(clauseType.name).border"></span>
+              {{ clauseType.name }}
             </button>
           </div>
         </div>
@@ -118,6 +219,26 @@
       <div class="confirmation-actions">
         <button type="button" class="btn-cancel" (click)="cancelNewContract()">No, Stay Here</button>
         <button type="button" class="btn-confirm" (click)="confirmNewContract()">Yes, Upload New</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog: Delete clause type -->
+  <div class="confirmation-overlay" *ngIf="showDeleteConfirmation()" (click)="cancelEditClause()">
+    <div class="confirmation-dialog" (click)="$event.stopPropagation()">
+      <div class="confirmation-header">
+        <h2>Delete Clause Type</h2>
+        <button class="close-btn" (click)="cancelDelete()">✕</button>
+      </div>
+      
+      <div class="confirmation-body">
+        <p>Are you sure you want to delete the clause type "<strong>{{ deleteConfirmationClause()?.name }}</strong>"?</p>
+        <p class="delete-warning">This action cannot be undone.</p>
+      </div>
+
+      <div class="confirmation-actions">
+        <button type="button" class="btn-cancel" (click)="cancelDelete()">Cancel</button>
+        <button type="button" class="btn-delete-confirm" (click)="confirmDelete()">Delete</button>
       </div>
     </div>
   </div>

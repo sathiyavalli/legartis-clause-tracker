@@ -8,6 +8,8 @@ import { provideEffects } from '@ngrx/effects';
 import { routes } from './app.routes';
 import { dashboardFeature } from './store/dashboard.reducer';
 import { loadDocumentsEffect } from './store/dashboard.effects';
+import { clauseTypesReducer } from './store/clause-types.reducer';
+import { ClauseTypesEffects } from './store/clause-types.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,7 +17,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withFetch()),
     provideAnimationsAsync(),
-    provideStore({ [dashboardFeature.name]: dashboardFeature.reducer }),
+    provideStore({
+      [dashboardFeature.name]: dashboardFeature.reducer,
+      clauseTypes: clauseTypesReducer,
+    }),
     provideEffects({ loadDocumentsEffect }),
+    provideEffects(ClauseTypesEffects),
   ],
 };
+

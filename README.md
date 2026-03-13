@@ -117,6 +117,13 @@ docker-compose.yml
 
 - **Clause summary sidebar:** The Dashboard includes a sidebar (collapsible on mobile) displaying a summary of all clause types and their counts across the entire document library. This gives users a quick overview of contract patterns and helps with navigation by showing which clause types are most prevalent.
 
+- **Clause type CRUD for usability:**  
+  To improve flexibility and usability, the system allows users to manage clause types directly from the Document Viewer sidebar. Users can:
+  - **Create** new clause types dynamically if a required label does not exist.
+  - **Edit** existing clause names to better match contract terminology.
+  - **Delete** clause types that are no longer needed.
+   This avoids hard-coding clause labels and allows the application to adapt to different contract structures and legal domains.
+
 - **Clause types:** Fixed list in the UI (e.g., Limitation of Liability, Non-Compete, Termination for Convenience, Indemnification, Confidentiality). The label endpoint accepts any string, allowing the list to be extended or data-driven by the backend in future iterations.
 
 - **SQLite:** Single file database, no extra server required. For production, consider migrating to PostgreSQL with environment-based `SQLALCHEMY_DATABASE_URL` configuration.

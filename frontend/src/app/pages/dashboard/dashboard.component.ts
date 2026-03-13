@@ -15,11 +15,12 @@ import { debounceTime } from 'rxjs/operators';
 
 import type { DocumentListItemWithClauses } from '../../models/document.model';
 import { DashboardActions } from '../../store/dashboard.actions';
+import * as ClauseTypesActions from '../../store/clause-types.actions';
 import {
   selectFilteredDocuments,
   selectGroupedByClause,
-  selectAllClauseTypes,
 } from '../../store/dashboard.selectors';
+import { selectClauseTypeNames } from '../../store/clause-types.selectors';
 import { dashboardFeature } from '../../store/dashboard.reducer';
 
 export interface DashboardFilterForm {
@@ -68,7 +69,7 @@ export class DashboardComponent implements OnInit {
   loading$ = this.store.select(dashboardFeature.selectLoading);
   groupByClauses$ = this.store.select(dashboardFeature.selectGroupByClauses);
   clauseTypes$: Observable<string[]> = this.store.select(
-    selectAllClauseTypes
+    selectClauseTypeNames
   );
   filteredDocuments$: Observable<DocumentListItemWithClauses[]> =
     this.store.select(selectFilteredDocuments);
@@ -158,6 +159,9 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Load clause types from backend
+    this.store.dispatch(ClauseTypesActions.loadClauseTypes());
+
     // Subscribe to filtered documents and update signal
     this.filteredDocuments$.subscribe((docs) => {
       this.documents.set(docs);

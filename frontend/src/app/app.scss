@@ -5,12 +5,13 @@
   display: block;
   min-height: 100vh;
   font-family: system-ui, -apple-system, sans-serif;
+  font-family: Inter;
 }
 
 .app-header {
   position: relative;
   padding: v.$spacing-md v.$spacing-lg;
-  background: v.$primary-color;
+  background: v.$secondary-color;
   color: #fff;
 
   .logo {
@@ -33,9 +34,6 @@
       text-decoration: none;
       font-weight: 500;
 
-      &.active {
-        text-decoration: underline;
-      }
 
       &:hover {
         opacity: 0.8;
@@ -84,7 +82,7 @@
           font-weight: 500;
 
           &:hover {
-            background: var(--primary-color, #d5365e);
+            background: var(--primary-color, #1e55cc);
             color: #fff;
             padding-left: calc(v.$spacing-md + 4px);
           }

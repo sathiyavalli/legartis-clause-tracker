@@ -1,10 +1,17 @@
-import { Component, inject, signal, computed, OnInit, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, OnInit, HostListener, OnDestroy } from '@angular/core';
+import { CommonModule, NgFor, NgIf } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Store } from '@ngrx/store';
 import { ApiService } from '../../services/api.service';
 import type { Document } from '../../models/document.model';
 import type { Sentence } from '../../models/sentence.model';
+import type { ClauseType } from '../../store/clause-types.model';
+import * as ClauseTypesActions from '../../store/clause-types.actions';
+import * as ClauseTypesSelectors from '../../store/clause-types.selectors';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 const CLAUSE_TYPES = [
   'Limitation of Liability',
@@ -44,15 +51,21 @@ interface HighlightedSegment {
   imports: [
     CommonModule,
     RouterLink,
+    ReactiveFormsModule,
+    NgFor,
+    NgIf,
   ],
   templateUrl: './document-viewer.component.html',
   styleUrl: './document-viewer.component.scss',
 })
-export class DocumentViewerComponent implements OnInit {
+export class DocumentViewerComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(ApiService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly store = inject(Store);
+  private readonly fb = inject(FormBuilder);
+  private readonly destroy$ = new Subject<void>();
 
   document = signal<Document | null>(null);
   sentences = signal<Sentence[]>([]);
@@ -85,9 +98,63 @@ export class DocumentViewerComponent implements OnInit {
   // Confirmation dialog for navigation
   showConfirmNavigationDialog = signal(false);
 
+  // Clause Type CRUD
+  clauseTypesList = signal<ClauseType[]>([]);
+  showAddClauseInput = signal(false);
+  addClauseForm: FormGroup;
+  editingClauseId = signal<number | null>(null);
+  editingClauseName = signal('');
+  showDeleteConfirmation = signal(false);
+  deleteConfirmationClause = signal<ClauseType | null>(null);
+  clauseTypesLoading = signal(false);
+  clauseTypesError = signal<string | null>(null);
+
   docId = computed(() => Number(this.route.snapshot.paramMap.get('id')));
 
+  constructor() {
+    this.addClauseForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(3)]],
+    });
+  }
+
   ngOnInit(): void {
+    // Load clause types from store
+    this.store.dispatch(ClauseTypesActions.loadClauseTypes());
+    
+    // Subscribe to clause types
+    this.store
+      .select(ClauseTypesSelectors.selectClauseTypesItems)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((items) => {
+        this.clauseTypesList.set(items);
+      });
+
+    this.store
+      .select(ClauseTypesSelectors.selectClauseTypesLoading)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((loading) => {
+        this.clauseTypesLoading.set(loading);
+      });
+
+    this.store
+      .select(ClauseTypesSelectors.selectClauseTypesError)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((error) => {
+        if (error) {
+          this.clauseTypesError.set(error);
+          this.showErrorNotification(error);
+        }
+      });
+
+    this.store
+      .select(ClauseTypesSelectors.selectClauseTypesSuccess)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((message) => {
+        if (message) {
+          this.showSuccessNotification(message);
+        }
+      });
+
     const id = this.docId();
     if (!id) return;
     this.loading.set(true);
@@ -105,6 +172,11 @@ export class DocumentViewerComponent implements OnInit {
         this.buildHighlights(list);
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   buildHighlights(sentenceList: Sentence[]): void {
@@ -137,7 +209,8 @@ export class DocumentViewerComponent implements OnInit {
 
     sortedHighlights.forEach(highlight => {
       const searchText = this.escapeHtml(highlight.text);
-      const color = CLAUSE_COLORS[highlight.clauseType];
+      const labelText = this.escapeHtml(highlight.clauseType);
+      const color = this.getClauseColor(highlight.clauseType);
       
       // Find the sentence ID for this highlighted text
       const matchingSentence = sentences.find(s => 
@@ -145,8 +218,12 @@ export class DocumentViewerComponent implements OnInit {
       );
       const sentenceId = matchingSentence?.id || 0;
       
-      // Create mark with data attributes for inline remove button
-      const replacement = `<mark class="highlight" data-sentence-id="${sentenceId}" data-clause-type="${highlight.clauseType}" style="background-color: ${color.bg}; border-left: 3px solid ${color.border}; padding: 2px 4px; display: inline; position: relative;">${searchText}<button class="inline-remove-btn" data-sentence-id="${sentenceId}" data-clause-type="${highlight.clauseType}" title="Remove clause">✕</button></mark>`;
+      // Create mark with clause label + inline remove button
+      const replacement = `<mark class="highlight" data-sentence-id="${sentenceId}" data-clause-type="${highlight.clauseType}" style="background-color: ${color.bg}; border-left: 3px solid ${color.border};">` +
+        `<span class="highlight-label" style="color: ${color.text};">${labelText}</span> ` +
+        `${searchText}` +
+        `<button class="inline-remove-btn" style="background-color: #d5365e;border-color:transparent;color: #ffffff;border-radius:20px;cursor:pointer;" data-sentence-id="${sentenceId}" data-clause-type="${highlight.clauseType}" title="Remove clause">x</button>` +
+        `</mark>`;
       
       // Use case-insensitive (i) but NOT global (g) - only replace FIRST occurrence
       const regex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
@@ -207,12 +284,15 @@ export class DocumentViewerComponent implements OnInit {
 
   updateCounts(sentenceList: Sentence[]): void {
     const counts: Record<string, number> = {};
-    this.clauseTypes.forEach(ct => counts[ct] = 0);
+    // Initialize counts for clause types currently available in the store
+    this.clauseTypesList().forEach(ct => (counts[ct.name] = 0));
+
     sentenceList.forEach(s => {
       if (s.clause_type) {
         counts[s.clause_type] = (counts[s.clause_type] || 0) + 1;
       }
     });
+
     this.clauseCounts.set(counts);
   }
 
@@ -342,7 +422,35 @@ export class DocumentViewerComponent implements OnInit {
   }
 
   getClauseColor(clauseType: string): { bg: string; border: string; text: string } {
-    return CLAUSE_COLORS[clauseType] || { bg: '#E8E8E8', border: '#757575', text: '#4A4A4A' };
+    const base = CLAUSE_COLORS[clauseType];
+    if (base) return base;
+
+    // Generate stable, deterministic colors for new/edited clause types.
+    // This keeps colors consistent across renders for the same clause label.
+    const palette = [
+      { bg: '#FFF3CD', border: '#FFC107', text: '#856404' },
+      { bg: '#F8D7DA', border: '#DC3545', text: '#721C24' },
+      { bg: '#D1ECF1', border: '#17A2B8', text: '#0C5460' },
+      { bg: '#D4EDDA', border: '#28A745', text: '#155724' },
+      { bg: '#E2E3E5', border: '#6C757D', text: '#383D41' },
+      { bg: '#CCE5FF', border: '#0056B3', text: '#ffffff' },
+      { bg: '#F8B4D9', border: '#C2185B', text: '#6F1D77' },
+      { bg: '#CFFBF8', border: '#00897B', text: '#055160' },
+      { bg: '#FFCCDA', border: '#D81B60', text: '#ffffff' },
+      { bg: '#E8E8E8', border: '#757575', text: '#4A4A4A' },
+    ];
+
+    const index = Math.abs(this.hashString(clauseType)) % palette.length;
+    return palette[index];
+  }
+
+  private hashString(value: string): number {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+      hash = (hash << 5) - hash + value.charCodeAt(i);
+      hash |= 0; // Convert to 32bit int
+    }
+    return hash;
   }
 
   trackBySentence(_: number, s: Sentence): number {
@@ -373,5 +481,131 @@ export class DocumentViewerComponent implements OnInit {
 
   cancelNewContract(): void {
     this.showConfirmNavigationDialog.set(false);
+  }
+
+  // ===== CLAUSE TYPE CRUD METHODS =====
+
+  // Show input for adding new clause type
+  openAddClauseInput(): void {
+    this.showAddClauseInput.set(true);
+    this.addClauseForm.reset();
+    // Focus on input after rendering
+    setTimeout(() => {
+      const input = document.querySelector('.add-clause-input') as HTMLInputElement;
+      input?.focus();
+    }, 0);
+  }
+
+  // Cancel adding new clause
+  cancelAddClause(): void {
+    this.showAddClauseInput.set(false);
+    this.addClauseForm.reset();
+  }
+
+  // Add new clause type
+  addClauseType(): void {
+    if (this.addClauseForm.invalid) {
+      this.showErrorNotification('Clause name must be at least 3 characters');
+      return;
+    }
+
+    const clauseName = this.addClauseForm.get('name')?.value?.trim();
+    if (!clauseName) return;
+
+    // Check for duplicates
+    if (this.clauseTypesList().some(ct => ct.name.toLowerCase() === clauseName.toLowerCase())) {
+      this.showErrorNotification('This clause type already exists');
+      return;
+    }
+
+    this.store.dispatch(ClauseTypesActions.createClauseType({ name: clauseName }));
+    this.showAddClauseInput.set(false);
+    this.addClauseForm.reset();
+  }
+
+  // Start editing a clause type
+  startEditClause(clause: ClauseType): void {
+    this.editingClauseId.set(clause.id);
+    this.editingClauseName.set(clause.name);
+    // Focus on input
+    setTimeout(() => {
+      const input = document.querySelector(`[data-edit-id="${clause.id}"]`) as HTMLInputElement;
+      input?.focus();
+      input?.select();
+    }, 0);
+  }
+
+  // Cancel editing
+  cancelEditClause(): void {
+    this.editingClauseId.set(null);
+    this.editingClauseName.set('');
+  }
+
+  // Save edited clause name
+  saveEditClause(clause: ClauseType): void {
+    const newName = this.editingClauseName().trim();
+    if (!newName || newName.length < 3) {
+      this.showErrorNotification('Clause name must be at least 3 characters');
+      return;
+    }
+
+    if (newName === clause.name) {
+      this.cancelEditClause();
+      return;
+    }
+
+    // Check for duplicates
+    if (this.clauseTypesList().some(ct => ct.id !== clause.id && ct.name.toLowerCase() === newName.toLowerCase())) {
+      this.showErrorNotification('This clause type already exists');
+      return;
+    }
+
+    this.store.dispatch(ClauseTypesActions.updateClauseType({ id: clause.id, name: newName }));
+    this.cancelEditClause();
+  }
+
+  // Show delete confirmation
+  showDeleteConfirmationDialog(clause: ClauseType): void {
+    this.deleteConfirmationClause.set(clause);
+    this.showDeleteConfirmation.set(true);
+  }
+
+  // Cancel delete
+  cancelDelete(): void {
+    this.showDeleteConfirmation.set(false);
+    this.deleteConfirmationClause.set(null);
+  }
+
+  // Confirm delete clause type
+  confirmDelete(): void {
+    const clause = this.deleteConfirmationClause();
+    if (!clause) return;
+
+    this.store.dispatch(ClauseTypesActions.deleteClauseType({ id: clause.id }));
+    this.showDeleteConfirmation.set(false);
+    this.deleteConfirmationClause.set(null);
+  }
+
+  // Handle Enter key in form
+  onAddClauseKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      this.addClauseType();
+    } else if (event.key === 'Escape') {
+      this.cancelAddClause();
+    }
+  }
+
+  // Handle Enter key in edit
+  onEditClauseKeydown(event: KeyboardEvent, clause: ClauseType): void {
+    if (event.key === 'Enter') {
+      this.saveEditClause(clause);
+    } else if (event.key === 'Escape') {
+      this.cancelEditClause();
+    }
+  }
+
+  // TrackBy function for clause types in ngFor
+  trackByClauseId(index: number, item: ClauseType): number | string {
+    return item.id;
   }
 }

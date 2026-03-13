@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import api_router
-from app.db.database import Base, engine
-from app.models import clause, document, sentence
+from app.db.database import Base, engine, SessionLocal
+from app.models import clause, clause_type, document, sentence
+from app.models.clause_type import ClauseType
 
 # Initialize FastAPI app FIRST
 app = FastAPI()
@@ -24,6 +25,33 @@ app.add_middleware(
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+# Seed default clause types
+def seed_default_clause_types():
+    db = SessionLocal()
+    try:
+        # Check if clause types already exist
+        existing_count = db.query(ClauseType).count()
+        if existing_count == 0:
+            default_clauses = [
+                ClauseType(name="Limitation of Liability"),
+                ClauseType(name="Termination for Convenience"),
+                ClauseType(name="Non-Compete"),
+                ClauseType(name="Confidentiality"),
+                ClauseType(name="Indemnification"),
+                ClauseType(name="Governing Law"),
+                ClauseType(name="Force Majeure"),
+                ClauseType(name="Warranties"),
+                ClauseType(name="Insurance"),
+                ClauseType(name="Other"),
+            ]
+            db.add_all(default_clauses)
+            db.commit()
+    finally:
+        db.close()
+
+# Seed on startup
+seed_default_clause_types()
 
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")

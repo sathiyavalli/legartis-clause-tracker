@@ -71,4 +71,21 @@ export class ApiService {
       { clause_type: clauseType }
     );
   }
+
+  // Clause Types API
+  getClauseTypes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/clause-types`);
+  }
+
+  createClauseType(data: { name: string }): Observable<any> {
+    return this.http.post<any>(`${this.base}/clause-types`, data);
+  }
+
+  updateClauseType(id: number, data: { name: string }): Observable<any> {
+    return this.http.put<any>(`${this.base}/clause-types/${id}`, data);
+  }
+
+  deleteClauseType(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.base}/clause-types/${id}`);
+  }
 }
