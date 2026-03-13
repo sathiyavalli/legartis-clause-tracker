@@ -1,0 +1,124 @@
+<div class="page">
+  <!-- Notification Toast -->
+  <div class="notification" *ngIf="showNotification()" [class.success]="notificationType() === 'success'" [class.error]="notificationType() === 'error'">
+    <span class="notification-text">{{ notificationMessage() }}</span>
+  </div>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <div class="breadcrumb-step completed">
+      <div class="breadcrumb-circle">1</div>
+      <span class="breadcrumb-label">Choose</span>
+    </div>
+    <div class="breadcrumb-line"></div>
+    <div class="breadcrumb-step completed">
+      <div class="breadcrumb-circle">2</div>
+      <span class="breadcrumb-label">Upload</span>
+    </div>
+    <div class="breadcrumb-line"></div>
+    <div class="breadcrumb-step active">
+      <div class="breadcrumb-circle">3</div>
+      <span class="breadcrumb-label">Assign</span>
+    </div>
+  </div>
+
+  <ng-container *ngIf="loading(); else loaded">
+    <p class="loading">Loading document...</p>
+  </ng-container>
+
+  <ng-template #loaded>
+    <ng-container *ngIf="document(); else missing">
+      <div class="header">
+        <div class="header-left">
+          <h1>{{ document()?.filename }}</h1>
+        </div>
+        <div class="header-right">
+          <a class="btn-nav btn-nav-primary" (click)="onNewContractClick()" title="Upload new contract">+ New Contract</a>
+          <a class="btn-secondary" routerLink="/dashboard">Back to dashboard</a>
+        </div>
+      </div>
+
+      <div class="container">
+        <!-- Left Panel: Document Content -->
+        <div class="content-panel">
+          <div class="content-card">
+            <p class="subtitle">Select text to assign clause types. Highlight any text, then choose a clause type from the modal.</p>
+            <div class="document-content" [innerHTML]="highlightedContent()" (mouseup)="onTextSelection($event)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Sidebar: Clause Types & Counts -->
+        <aside class="sidebar" [class.open]="sidebarOpen()">
+          <div class="sidebar-header">
+            <h3>Document Clauses</h3>
+            <button class="toggle-btn" (click)="toggleSidebar()" [attr.aria-label]="sidebarOpen() ? 'Close sidebar' : 'Open sidebar'">
+              {{ sidebarOpen() ? '✕' : '☰' }}
+            </button>
+          </div>
+          
+          <div class="sidebar-content" *ngIf="sidebarOpen()">
+            <div class="clause-summary" *ngIf="sentences().length > 0">
+              <div class="summary-item" *ngFor="let clauseType of clauseTypes; trackBy: trackByClause">
+                <span class="summary-label">{{ clauseType }}</span>
+                <span class="summary-count" [style.background-color]="getClauseColor(clauseType).border">
+                  {{ (clauseCounts()[clauseType] || 0) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Modal: Assign Clause Type -->
+      <div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>ASSIGN CLAUSE TYPE</h2>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+          
+          <div class="selected-text-preview">
+            <p class="preview-label">Selected text:</p>
+            <p class="preview-text">{{ selectedText() }}</p>
+          </div>
+
+          <div class="clause-options">
+            <button 
+              *ngFor="let clauseType of clauseTypes; trackBy: trackByClause"
+              class="clause-option"
+              (click)="assignClauseToSelection(clauseType)"
+              [style]="'--clause-bg: ' + getClauseColor(clauseType).bg + '; --clause-border: ' + getClauseColor(clauseType).border + '; --clause-text: ' + getClauseColor(clauseType).text"
+            >
+              <span class="clause-dot" [style.background-color]="getClauseColor(clauseType).border"></span>
+              {{ clauseType }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </ng-template>
+
+  <ng-template #missing>
+    <p>Document not found.</p>
+  </ng-template>
+
+  <!-- Confirmation Dialog: Navigate without labeling -->
+  <div class="confirmation-overlay" *ngIf="showConfirmNavigationDialog()" (click)="cancelNewContract()">
+    <div class="confirmation-dialog" (click)="$event.stopPropagation()">
+      <div class="confirmation-header">
+        <h2>Unsaved Changes</h2>
+        <button class="close-btn" (click)="cancelNewContract()">✕</button>
+      </div>
+      
+      <div class="confirmation-body">
+        <p>You haven't labeled any clauses on this document yet. Are you sure you want to upload a new document or contract?</p>
+      </div>
+
+      <div class="confirmation-actions">
+        <button type="button" class="btn-cancel" (click)="cancelNewContract()">No, Stay Here</button>
+        <button type="button" class="btn-confirm" (click)="confirmNewContract()">Yes, Upload New</button>
+      </div>
+    </div>
+  </div>
+</div>

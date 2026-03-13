@@ -1,0 +1,189 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>All Contracts</h1>
+      <p class="subtitle">Showing contracts with extracted clauses</p>
+    </div>
+    <a class="btn-primary" routerLink="/upload">+ Add Contract</a>
+  </header>
+
+  <!-- Search & View Toggle Toolbar -->
+  <section class="toolbar">
+    <div class="search-wrapper">
+      <input
+        type="text"
+        placeholder="Search (4+ chars)..."
+        class="search-input"
+        [formControl]="filterForm.controls.search"
+      />
+      <div class="view-icons">
+        <button
+          type="button"
+          class="icon-btn"
+          [class.active]="!(filterForm.controls.groupByClauses.value)"
+          (click)="toggleViewMode(false)"
+          title="List view"
+        >
+          ☰
+        </button>
+        <button
+          type="button"
+          class="icon-btn"
+          [class.active]="filterForm.controls.groupByClauses.value"
+          (click)="toggleViewMode(true)"
+          title="Grouped view"
+        >
+          ▦
+        </button>
+      </div>
+    </div>
+    <div class="dropdown-wrapper" (click)="toggleClauseDropdown()" [class.open]="clauseDropdownOpen()">
+        <button type="button" class="dropdown-btn">
+          {{ filterForm.controls.clause.value || 'All Clauses' }}
+          <span class="dropdown-icon">{{ clauseDropdownOpen() ? '▲' : '▼' }}</span>
+        </button>
+        <div class="dropdown-menu" *ngIf="clauseDropdownOpen()">
+          <button
+            type="button"
+            class="dropdown-item"
+            [class.active]="!filterForm.controls.clause.value"
+            (click)="selectClause(null)"
+          >
+            All Clauses
+          </button>
+          @for (ct of clauseTypes$ | async; track ct) {
+            <button
+              type="button"
+              class="dropdown-item"
+              [class.active]="filterForm.controls.clause.value === ct"
+              (click)="selectClause(ct)"
+            >
+              {{ ct }}
+            </button>
+          }
+        </div>
+      </div>
+       <div class="date-range-inputs">
+        <div class="date-field-group">
+          <label class="date-label">From
+          <input type="date" [formControl]="filterForm.controls.dateFrom" placeholder="From" class="date-input" />
+          </label>
+        </div>
+        <div class="date-field-group">
+          <label class="date-label">To
+          <input type="date" [formControl]="filterForm.controls.dateTo" placeholder="To" class="date-input" />
+          </label>
+        </div>
+      </div>
+    <button type="button" class="btn-reset" (click)="openResetConfirm()">
+      Reset filters
+    </button>
+  </section>
+
+
+  @if (loading$ | async) {
+    <p class="loading">Loading...</p>
+  } @else {
+    <section class="table-surface">
+      @if (filterForm.controls.groupByClauses.value) {
+        <!-- Grouped View -->
+        @for (group of paginatedGroupedData(); track trackByClauseType($index, group)) {
+          @if (group && typeof group === 'object' && 'clauseType' in group) {
+            <div class="clause-group">
+              <div class="clause-group-header">
+                <span class="clause-chip">{{ group.clauseType }}</span>
+                <span class="group-count">{{ group.contracts.length }} contracts</span>
+              </div>
+              <div class="table-wrapper">
+                <table class="contracts-table">
+                  <thead>
+                    <tr>
+                      <th (click)="toggleSort('name')" class="sortable">
+                        Contract name
+                        <span class="sort-icon">{{ getSortIcon('name') }}</span>
+                      </th>
+                      <th (click)="toggleSort('date')" class="sortable">
+                        Date added
+                        <span class="sort-icon">{{ getSortIcon('date') }}</span>
+                      </th>
+                      <th>Clauses</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (doc of group.contracts; track trackByDocId($index, doc)) {
+                      <tr [routerLink]="['/contracts', doc.id]" class="clickable">
+                        <td class="contract-name">{{ doc.filename }}</td>
+                        <td class="date-cell">{{ doc.uploaded_at | date : 'MMM dd, yyyy HH:mm' }}</td>
+                        <td>
+                          @for (c of doc.clause_types; track c) {
+                            <span class="clause-tag">{{ c }}</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+        }
+      } @else {
+        <!-- List View -->
+        <div class="table-wrapper">
+          <table class="contracts-table">
+            <thead>
+              <tr>
+                <th (click)="toggleSort('name')" class="sortable">
+                  Contract name
+                  <span class="sort-icon">{{ getSortIcon('name') }}</span>
+                </th>
+                <th (click)="toggleSort('date')" class="sortable">
+                  Date added
+                  <span class="sort-icon">{{ getSortIcon('date') }}</span>
+                </th>
+                <th>Clauses</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (doc of paginatedDocuments(); track trackByDocId($index, doc)) {
+                <tr [routerLink]="['/contracts', doc.id]" class="clickable">
+                  <td class="contract-name">{{ doc.filename }}</td>
+                  <td class="date-cell">{{ doc.uploaded_at | date : 'MMM dd, yyyy HH:mm' }}</td>
+                  <td>
+                    @for (c of doc.clause_types; track c) {
+                      <span class="clause-tag">{{ c }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (sortedDocuments().length === 0) {
+        <p class="empty">No contracts match your filters.</p>
+      }
+
+      @if (hasMoreDocuments()) {
+        <div class="load-more-container">
+          <button type="button" class="btn-load-more" (click)="loadMore()">Load More</button>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Reset Confirmation Modal -->
+  @if (resetConfirmOpen()) {
+    <div class="modal-overlay" (click)="closeResetConfirm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h2>Reset All Filters?</h2>
+        <p>This will clear all search, clause, and date filters.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeResetConfirm()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="confirmResetFilters()">Reset</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

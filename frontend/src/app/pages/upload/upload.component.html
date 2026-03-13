@@ -1,0 +1,39 @@
+<div class="upload-page">
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <div class="breadcrumb-step" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1">
+      <div class="breadcrumb-circle">1</div>
+      <span class="breadcrumb-label">Choose</span>
+    </div>
+    <div class="breadcrumb-line"></div>
+    <div class="breadcrumb-step" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2">
+      <div class="breadcrumb-circle">2</div>
+      <span class="breadcrumb-label">Upload</span>
+    </div>
+    <div class="breadcrumb-line"></div>
+    <div class="breadcrumb-step" [class.active]="currentStep() === 3" [class.completed]="currentStep() > 3">
+      <div class="breadcrumb-circle">3</div>
+      <span class="breadcrumb-label">Assign</span>
+    </div>
+  </div>
+
+  <div class="upload-form">
+    <h2>Upload contract</h2>
+    <p class="info-text">Upload a .txt or .md file to extract sentences and assign clause types</p>
+    <input
+      type="file"
+      accept=".txt,.md,.markdown"
+      (change)="onFileSelected($event)"
+      [disabled]="uploading"
+      #fileInput
+    />
+    <p *ngIf="selectedFile" class="selected-file">📄 {{ selectedFile.name }}</p>
+    <div class="buttons">
+      <button (click)="upload()" [disabled]="!selectedFile || uploading" class="btn-primary">
+        {{ uploading ? 'Uploading...' : 'Upload' }}
+      </button>
+    </div>
+    <p class="error" *ngIf="errorMessage">❌ {{ errorMessage }}</p>
+  </div>
+</div>
+

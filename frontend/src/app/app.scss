@@ -1,0 +1,103 @@
+@use 'sass:color';
+@use '../styles/variables' as v;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.app-header {
+  position: relative;
+  padding: v.$spacing-md v.$spacing-lg;
+  background: v.$primary-color;
+  color: #fff;
+
+  .logo {
+    font-size: v.$font-size-xl;
+    font-weight: bold;
+    z-index: 2;
+  }
+
+  .main-nav {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: v.$spacing-lg;
+    align-items: center;
+
+    a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+
+      &.active {
+        text-decoration: underline;
+      }
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+
+    .dropdown {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      .dropbtn {
+        background: none;
+        border: none;
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 0;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        background: v.$surface-color;
+        color: v.$text-color;
+        min-width: 170px;
+        box-shadow: v.$shadow-soft;
+        padding: v.$spacing-sm 0;
+        border-radius: v.$border-radius-md;
+        top: 100%;
+        left: 0;
+        z-index: 100;
+        margin-top: 8px;
+
+        a {
+          display: block;
+          padding: v.$spacing-sm v.$spacing-md;
+          color: v.$text-color;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          font-weight: 500;
+
+          &:hover {
+            background: var(--primary-color, #d5365e);
+            color: #fff;
+            padding-left: calc(v.$spacing-md + 4px);
+          }
+        }
+      }
+
+      &:hover .dropdown-content {
+        display: block;
+      }
+    }
+  }
+}
+
+main {
+  padding-bottom: v.$spacing-lg;
+}

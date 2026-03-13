@@ -1,0 +1,135 @@
+@use '../../../styles/variables' as v;
+
+.upload-page {
+  padding: v.$spacing-lg;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$spacing-md;
+  padding: v.$spacing-md v.$spacing-lg;
+  background: #fff;
+  border-bottom: 1px solid v.$border-color;
+  margin-bottom: v.$spacing-lg;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.breadcrumb-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  .breadcrumb-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+    background: #e0e0e0;
+    color: #666;
+    transition: all 0.3s ease;
+  }
+
+  .breadcrumb-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #999;
+    text-align: center;
+    width: 60px;
+  }
+
+  &.active .breadcrumb-circle {
+    background: v.$secondary-color;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(18, 54, 132, 0.1);
+  }
+
+  &.completed .breadcrumb-circle {
+    background: v.$secondary-color;
+    color: white;
+  }
+}
+
+.breadcrumb-line {
+  height: 2px;
+  width: 40px;
+  background: #e0e0e0;
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+.upload-form {
+  background: v.$surface-color;
+  padding: v.$spacing-lg;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-md;
+  text-align: center;
+
+  h2 {
+    margin-top: 0;
+    color: v.$text-color;
+  }
+
+  .info-text {
+    color: v.$text-muted;
+    margin-bottom: v.$spacing-md;
+  }
+
+  input[type='file'] {
+    display: block;
+    margin: v.$spacing-md auto;
+  }
+
+  .selected-file {
+    color: v.$secondary-color;
+    font-weight: 500;
+    margin: v.$spacing-md 0;
+  }
+
+  .buttons {
+    display: flex;
+    gap: v.$spacing-md;
+    justify-content: center;
+    margin: v.$spacing-md 0;
+  }
+
+  .btn-primary {
+    background: v.$primary-color;
+    color: #fff;
+    border: none;
+    padding: v.$spacing-sm v.$spacing-md;
+    border-radius: v.$border-radius-md;
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.2s;
+
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .error {
+    color: #d32f2f;
+    margin-top: v.$spacing-md;
+    padding: v.$spacing-sm;
+    background: rgba(211, 47, 47, 0.1);
+    border-radius: v.$border-radius-sm;
+  }
+}
+
+
