@@ -4,8 +4,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  font-family: system-ui, -apple-system, sans-serif;
-  font-family: Inter;
+  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .app-header {
@@ -42,7 +41,7 @@
 
     .dropdown {
       position: relative;
-      display: flex;
+      display: inline-block;
       align-items: center;
 
       .dropbtn {
